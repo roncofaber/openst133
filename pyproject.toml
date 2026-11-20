@@ -66,4 +66,4 @@ before-all = [
     'C:/msys64/usr/bin/bash.exe -lc "pacman --noconfirm -Syuu"',
     'C:/msys64/usr/bin/bash.exe -lc "pacman --noconfirm -Syuu --needed mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-libusb mingw-w64-ucrt-x86_64-ninja"',
 ]
-repair-wheel-command = "delvewheel repair --add-path C:/msys64/ucrt64/bin --analyze-existing --analyze-existing-exes -w {dest_dir} {wheel}"
+repair-wheel-command = "delvewheel repair --add-path C:/msys64/ucrt64/bin --exclude openst133.dll --analyze-existing --analyze-existing-exes -w {dest_dir} {wheel}"
