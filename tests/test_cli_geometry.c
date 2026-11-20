@@ -240,7 +240,7 @@ static int run_cli(char **argv, int argc, char *output, size_t capacity, const c
 
 /*
  * Through the CLI entry point: the conflicting combination is refused with the explanation before any device is
- * listed, and the composing combination passes the flag check and stops only at the hardware guard.
+ * listed, and the composing combination passes the flag check.
  */
 static void test_cli_entry(const char *directory)
 {
@@ -268,7 +268,9 @@ static void test_cli_entry(const char *directory)
     TEST_CHECK(file == NULL);
 
     TEST_CHECK(run_cli(compose, 9, text, sizeof(text), capture) == EXIT_FAILURE);
-    if (strstr(text, "--fvb bins all") != NULL || strstr(text, "OPENST133_NO_HARDWARE") == NULL) {
+    /* Past the flag check, ost stops at the hardware guard, or earlier when no camera is attached to list. */
+    if (strstr(text, "--fvb bins all") != NULL ||
+        (strstr(text, "OPENST133_NO_HARDWARE") == NULL && strstr(text, "no ST-133 found") == NULL)) {
         (void)fprintf(stderr, "composing flags gave:\n%s", text);
         TEST_CHECK(0);
     }

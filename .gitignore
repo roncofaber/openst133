@@ -13,3 +13,9 @@ build/
 build-*/
 dist/
 .claude/
+
+# Created by ScopeFoundry next to wherever an app runs
+data/
+log/
+py_analysis_scripts/
+integrations/docs/

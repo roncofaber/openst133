@@ -502,3 +502,27 @@ def test_h5_is_self_describing(app):
         assert group["frames"].attrs["dimensions"] == "frame, row, column"
         assert group["temperature"].attrs["unit"] == "C" and group["frame_time_utc"].attrs["unit"] == "s"
         assert "acquisition_record" in group.attrs
+
+
+def test_refusals_during_a_run_are_reported_not_raised(app, monkeypatch):
+    hw = app.hardware["openst133"]
+    measure = app.measurements["openst133_acquire"]
+    panel = measure.panel
+    hw.settings["connected"] = True
+    hw.settings["accumulations"] = 3
+    panel.acquire_continuous()
+    wait_done(measure)
+    assert panel.status.text().startswith("not started: Continuous needs Accumulations 1")
+    hw.settings["accumulations"] = 1
+
+    def refuse(self, frames=None):
+        raise CameraUnavailable("streaming with accumulations is not supported yet")
+        yield
+
+    monkeypatch.setattr("openst133.camera.SimulatedCamera.stream", refuse)
+    panel.acquire_continuous()
+    wait_done(measure)
+    assert panel.status.text() == "stopped: streaming with accumulations is not supported yet"
+    panel.acquire_once()
+    wait_done(measure)
+    assert measure.last_frame is not None and not measure.error

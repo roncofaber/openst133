@@ -50,7 +50,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends cmake ninja-build pkg-config libusb-1.0-0-dev xvfb
-          python -m pip install numpy
+          python -m pip install numpy tifffile h5py
       - name: Configure
         run: >
           cmake -S . -B build -G Ninja

@@ -62,6 +62,10 @@ class OpenST133Measure(Measurement):
                 raise CameraUnavailable(f"cannot open the camera: {hw.connect_error or 'see the log'}")
             if "acquisition" in hw.unsupported:
                 raise CameraUnavailable(hw.unsupported["acquisition"])
+            if self.settings["mode"] == "live" and int(hw.settings["accumulations"]) > 1:
+                raise CameraUnavailable(
+                    "Continuous needs Accumulations 1 because a stream cannot sum frames; use Acquire for accumulated frames"
+                )
             hw.configure_readout()
         except (CameraError, ValueError) as error:
             # A refusal is reported in the panel and the log rather than raised as an unhandled exception.
@@ -115,9 +119,9 @@ class OpenST133Measure(Measurement):
         except AcquisitionAborted:
             self.interrupt_measurement_called = True
         except CameraError as error:
+            # Reported in the panel by post_run and in the log, rather than raised from the measurement thread.
             self.error = str(error)
             self.log.error(f"acquisition failed: {error}")
-            raise
 
     def _record_frame(self, frame):
         """Keep a frame with the exposure and settings the hardware recorded when its acquisition started."""
@@ -132,8 +136,11 @@ class OpenST133Measure(Measurement):
         self.hw.abort()
 
     def post_run(self):
+        panel = getattr(self, "panel", None)
+        if self.error and panel is not None:
+            panel.status.setText(f"stopped: {self.error}")
         # ScopeFoundry clears interrupt_measurement_called when the thread ends, before post_run; end_state keeps it.
-        if not getattr(self, "not_ready", None) and self.settings["mode"] == "single" and self.frames and getattr(self, "end_state", None) == "stop_success":
+        if not self.error and not getattr(self, "not_ready", None) and self.settings["mode"] == "single" and self.frames and getattr(self, "end_state", None) == "stop_success":
             self.save()
 
     def update_display(self):
