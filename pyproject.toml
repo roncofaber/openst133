@@ -62,5 +62,9 @@ manylinux-x86_64-image = "manylinux_2_28"
 
 [tool.cibuildwheel.windows]
 environment = { PATH = "C:\\msys64\\ucrt64\\bin;$PATH", CMAKE_GENERATOR = "Ninja", SKBUILD_CMAKE_ARGS = "-DCMAKE_MAKE_PROGRAM=C:/msys64/ucrt64/bin/ninja.exe;-DCMAKE_C_COMPILER=C:/msys64/ucrt64/bin/gcc.exe;-DCMAKE_RC_COMPILER=C:/msys64/ucrt64/bin/windres.exe;-DCMAKE_PREFIX_PATH=C:/msys64/ucrt64;-DCMAKE_SHARED_LINKER_FLAGS=-static-libgcc" }
-before-all = 'C:/msys64/usr/bin/bash.exe -lc "pacman --noconfirm --needed -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-libusb mingw-w64-ucrt-x86_64-ninja"'
+before-all = [
+    'C:/msys64/usr/bin/bash.exe -lc "pacman --noconfirm -Syuu"',
+    'C:/msys64/usr/bin/bash.exe -lc "pacman --noconfirm -Syuu --needed mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-libusb mingw-w64-ucrt-x86_64-ninja"',
+    'C:/msys64/usr/bin/bash.exe -lc "export PATH=/ucrt64/bin:\$PATH; printf \"int main(void) { return 0; }\n\" > /tmp/t.c && gcc -v /tmp/t.c -o /tmp/t.exe && /tmp/t.exe && echo gcc-works"',
+]
 repair-wheel-command = "delvewheel repair --add-path C:/msys64/ucrt64/bin --include openst133.dll --analyze-existing-exes -w {dest_dir} {wheel}"
