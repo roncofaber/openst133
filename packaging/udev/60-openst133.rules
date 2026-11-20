@@ -1,0 +1,5 @@
+# Copyright (c) 2026 DATM group, The Molecular Foundry, Lawrence Berkeley National Laboratory
+# SPDX-License-Identifier: MIT
+# openst133: non-root access to the Princeton Instruments ST-133 USB 2.0 interface (libusb), for the plugdev group
+# and the active local user (uaccess).
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0bd7", ATTRS{idProduct}=="a010", MODE="0660", GROUP="plugdev", TAG+="uaccess"

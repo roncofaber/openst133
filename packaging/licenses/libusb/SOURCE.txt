@@ -1,0 +1,10 @@
+openst133 wheels bundle an unmodified libusb 1.0 shared library (libusb-1.0.so.0 on Linux, libusb-1.0.dll on
+Windows), copied from the build environment by auditwheel or delvewheel. The native openst133 library links to it
+dynamically; to use a different or modified libusb, replace that file with a compatible build of the same name.
+
+License: GNU Lesser General Public License 2.1 or later (COPYING in this folder).
+
+Corresponding source:
+  Linux wheels:   the AlmaLinux 8 libusb1 source package of the manylinux_2_28 build image.
+  Windows wheels: the MSYS2 mingw-w64-ucrt-x86_64-libusb source package of the build runner.
+  Upstream:       https://github.com/libusb/libusb/releases

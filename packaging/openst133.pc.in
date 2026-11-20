@@ -1,0 +1,15 @@
+# Copyright (c) 2026 DATM group, The Molecular Foundry, Lawrence Berkeley National Laboratory
+# SPDX-License-Identifier: MIT
+
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: openst133
+Description: Princeton Instruments ST-133 device and SPE file library
+Version: @PROJECT_VERSION@
+Requires.private: libusb-1.0
+Libs: -L${libdir} -lopenst133
+Libs.private: -pthread
+Cflags: -I${includedir}

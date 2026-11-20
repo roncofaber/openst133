@@ -1,0 +1,122 @@
+# Copyright (c) 2026 DATM group, The Molecular Foundry, Lawrence Berkeley National Laboratory
+# SPDX-License-Identifier: MIT
+
+name: ci
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  OPENST133_NO_HARDWARE: "1"
+
+jobs:
+  versions:
+    name: version consistency
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check native, Python, ScopeFoundry and changelog versions
+        run: python3 -I packaging/ci/check_version.py
+      - name: Check the release tag
+        if: startsWith(github.ref, 'refs/tags/')
+        run: python3 -I packaging/ci/check_version.py "$GITHUB_REF_NAME"
+
+  linux:
+    name: Linux build and tests
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build pkg-config libusb-1.0-0-dev xvfb
+          python -m pip install numpy
+      - name: Configure
+        run: >
+          cmake -S . -B build -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_C_FLAGS="-Wall -Wextra -Werror"
+          -DPython3_EXECUTABLE="$(command -v python)"
+      - name: Build
+        run: cmake --build build
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  wheel:
+    name: Linux wheel
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends cmake ninja-build pkg-config libusb-1.0-0-dev
+      - name: Build the wheel
+        run: python -m pip wheel --no-deps --wheel-dir dist .
+      - name: Install and smoke-test the wheel
+        run: |
+          python -m venv "$RUNNER_TEMP/wheel-venv"
+          "$RUNNER_TEMP/wheel-venv/bin/python" -m pip install dist/openst133-*.whl
+          cd "$RUNNER_TEMP"
+          "$RUNNER_TEMP/wheel-venv/bin/python" -I "$GITHUB_WORKSPACE/packaging/ci/check_wheel.py"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openst133-linux-wheel
+          path: dist/openst133-*.whl
+          if-no-files-found: error
+
+  mingw:
+    name: MinGW cross-build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install the MinGW toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends gcc-mingw-w64-x86-64 binutils-mingw-w64-x86-64 cmake ninja-build pkg-config make bzip2
+      - name: Cross-build libusb
+        run: .github/scripts/build-mingw-libusb.sh "$RUNNER_TEMP/mingw-libusb" "$RUNNER_TEMP/libusb-work"
+      - name: Cross-build openst133.dll and ost.exe
+        env:
+          OPENST133_LIBUSB_ROOT: ${{ runner.temp }}/mingw-libusb
+          OPENST133_WINDOWS_BUILD_DIR: ${{ runner.temp }}/windows-build
+        run: |
+          .github/scripts/cross-windows.sh | tee "$RUNNER_TEMP/cross-windows.log"
+          grep -q '^PASS: ' "$RUNNER_TEMP/cross-windows.log"
+      - name: Check DLL imports and exports
+        run: |
+          x86_64-w64-mingw32-objdump -p "$RUNNER_TEMP/windows-build/openst133.dll" > "$RUNNER_TEMP/dll.txt"
+          x86_64-w64-mingw32-objdump -p "$RUNNER_TEMP/windows-build/ost.exe" > "$RUNNER_TEMP/exe.txt"
+          grep -q 'DLL Name: libusb-1.0.dll' "$RUNNER_TEMP/dll.txt"
+          grep -q 'ost_camera_open' "$RUNNER_TEMP/dll.txt"
+          grep -q 'DLL Name: openst133.dll' "$RUNNER_TEMP/exe.txt"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: openst133-windows-x86_64
+          path: |
+            ${{ runner.temp }}/windows-build/openst133.dll
+            ${{ runner.temp }}/windows-build/ost.exe
+          if-no-files-found: error

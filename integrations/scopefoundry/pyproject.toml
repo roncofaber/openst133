@@ -1,0 +1,24 @@
+# Copyright (c) 2026 DATM group, The Molecular Foundry, Lawrence Berkeley National Laboratory
+# SPDX-License-Identifier: MIT
+
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "openst133-scopefoundry"
+version = "0.1.0"
+description = "ScopeFoundry hardware component and measurement for the openst133 ST-133 camera driver"
+requires-python = ">=3.13"
+dependencies = ["openst133", "ScopeFoundry>=2.3", "numpy>=1.23", "h5py", "qtpy"]
+
+[project.optional-dependencies]
+gui = ["PySide6", "pyqtgraph", "matplotlib"]
+test = ["pytest", "PySide6", "pyqtgraph", "matplotlib"]
+
+[tool.setuptools.packages.find]
+include = ["ScopeFoundryHW.openst133*"]
+namespaces = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

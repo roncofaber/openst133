@@ -1,0 +1,7 @@
+# Created by ScopeFoundry when an app or test runs
+docs/
+log/
+py_analysis_scripts/
+*.egg-info/
+build/
+__pycache__/

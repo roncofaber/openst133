@@ -1,0 +1,64 @@
+# Copyright (c) 2026 DATM group, The Molecular Foundry, Lawrence Berkeley National Laboratory
+# SPDX-License-Identifier: MIT
+
+[build-system]
+requires = ["scikit-build-core>=0.11"]
+build-backend = "scikit_build_core.build"
+
+[project]
+name = "openst133"
+version = "0.1.0"
+description = "Open driver, ost command and Python bindings for Princeton Instruments ST-133 USB camera controllers"
+readme = "README.md"
+license = "MIT"
+license-files = [
+    "LICENSE",
+    "THIRD_PARTY_NOTICES.md",
+    "packaging/licenses/libusb/*",
+    "packaging/licenses/mingw-w64/*",
+]
+requires-python = ">=3.10"
+dependencies = ["numpy>=1.23", "tifffile", "h5py>=3.8; python_version < '3.15'"]
+keywords = ["ST-133", "Princeton Instruments", "CCD", "spectroscopy", "SPE", "camera", "libusb"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: C",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+    "Topic :: System :: Hardware :: Hardware Drivers",
+]
+
+[project.urls]
+Homepage = "https://github.com/roncofaber/openst133"
+Documentation = "https://github.com/roncofaber/openst133/tree/main/docs/user"
+Issues = "https://github.com/roncofaber/openst133/issues"
+Changelog = "https://github.com/roncofaber/openst133/blob/main/CHANGELOG.md"
+
+[project.optional-dependencies]
+characterization = ["emva1288", "numpy<2", "scipy<1.12", "matplotlib<3.9", "contourpy<1.3"]
+
+[project.scripts]
+ost = "openst133._ost:main"
+openst133 = "openst133.__main__:main"
+
+[tool.scikit-build]
+cmake.args = ["-DBUILD_TESTING=OFF"]
+install.components = ["python"]
+wheel.install-dir = "openst133"
+wheel.packages = ["python/src/openst133"]
+sdist.exclude = [".github", ".claude", "integrations"]
+
+[tool.cibuildwheel]
+build = "cp310-* cp311-* cp312-* cp313-* cp314-*"
+test-command = "python -I {project}/packaging/ci/check_wheel.py"
+
+[tool.cibuildwheel.linux]
+before-all = "dnf install -y libusb1-devel pkgconf-pkg-config && dnf clean all"
+manylinux-x86_64-image = "manylinux_2_28"
+
+[tool.cibuildwheel.windows]
+before-all = 'C:/msys64/usr/bin/bash.exe -lc "pacman --noconfirm --needed -S mingw-w64-ucrt-x86_64-gcc mingw-w64-ucrt-x86_64-libusb mingw-w64-ucrt-x86_64-ninja"'
+repair-wheel-command = "delvewheel repair --add-path C:/msys64/ucrt64/bin --include openst133.dll --analyze-existing-exes -w {dest_dir} {wheel}"
